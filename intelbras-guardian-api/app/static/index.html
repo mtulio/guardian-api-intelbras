@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intelbras Guardian - Test UI</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: #1a1a2e;
@@ -14,9 +20,24 @@
             min-height: 100vh;
             padding: 20px;
         }
-        .container { max-width: 900px; margin: 0 auto; }
-        h1 { color: #00d4ff; margin-bottom: 20px; text-align: center; }
-        h2 { color: #00d4ff; margin: 20px 0 10px; font-size: 1.2em; }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #00d4ff;
+            margin: 20px 0 10px;
+            font-size: 1.2em;
+        }
+
         .card {
             background: #16213e;
             border-radius: 10px;
@@ -24,9 +45,20 @@
             margin-bottom: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: #aaa; }
-        input[type="text"], input[type="password"], input[type="email"] {
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="email"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #333;
@@ -34,6 +66,7 @@
             background: #0f0f23;
             color: #eee;
         }
+
         button {
             background: #00d4ff;
             color: #000;
@@ -45,25 +78,77 @@
             margin-right: 10px;
             margin-bottom: 10px;
         }
-        button:hover { background: #00b8e6; }
-        button:disabled { background: #444; color: #888; cursor: not-allowed; }
-        button.danger { background: #ff4757; color: #fff; }
-        button.danger:hover { background: #ff3344; }
-        button.warning { background: #ffa502; color: #000; }
-        button.warning:hover { background: #ff9500; }
-        button.success { background: #2ed573; color: #000; }
-        button.success:hover { background: #26c766; }
-        .status { padding: 10px; border-radius: 5px; margin: 10px 0; }
-        .status.success { background: rgba(46, 213, 115, 0.2); border: 1px solid #2ed573; }
-        .status.error { background: rgba(255, 71, 87, 0.2); border: 1px solid #ff4757; }
-        .status.info { background: rgba(0, 212, 255, 0.2); border: 1px solid #00d4ff; }
+
+        button:hover {
+            background: #00b8e6;
+        }
+
+        button:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        button.danger {
+            background: #ff4757;
+            color: #fff;
+        }
+
+        button.danger:hover {
+            background: #ff3344;
+        }
+
+        button.warning {
+            background: #ffa502;
+            color: #000;
+        }
+
+        button.warning:hover {
+            background: #ff9500;
+        }
+
+        button.success {
+            background: #2ed573;
+            color: #000;
+        }
+
+        button.success:hover {
+            background: #26c766;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .status.success {
+            background: rgba(46, 213, 115, 0.2);
+            border: 1px solid #2ed573;
+        }
+
+        .status.error {
+            background: rgba(255, 71, 87, 0.2);
+            border: 1px solid #ff4757;
+        }
+
+        .status.info {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+        }
+
         .device-card {
             background: #0f3460;
             border-radius: 8px;
             padding: 15px;
             margin: 10px 0;
         }
-        .device-card h3 { color: #00d4ff; margin-bottom: 10px; }
+
+        .device-card h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+
         .partition {
             background: #1a1a2e;
             padding: 10px;
@@ -73,16 +158,33 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .partition-status {
             padding: 5px 10px;
             border-radius: 3px;
             font-size: 0.8em;
             font-weight: bold;
         }
-        .partition-status.armed { background: #ff4757; }
-        .partition-status.disarmed { background: #2ed573; color: #000; }
-        .partition-status.stay { background: #ffa502; color: #000; }
-        .event-list { max-height: 300px; overflow-y: auto; }
+
+        .partition-status.armed {
+            background: #ff4757;
+        }
+
+        .partition-status.disarmed {
+            background: #2ed573;
+            color: #000;
+        }
+
+        .partition-status.stay {
+            background: #ffa502;
+            color: #000;
+        }
+
+        .event-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
         .event-item {
             background: #0f3460;
             padding: 10px;
@@ -90,7 +192,12 @@
             margin: 5px 0;
             font-size: 0.9em;
         }
-        .event-item .time { color: #aaa; font-size: 0.8em; }
+
+        .event-item .time {
+            color: #aaa;
+            font-size: 0.8em;
+        }
+
         pre {
             background: #0f0f23;
             padding: 10px;
@@ -100,8 +207,19 @@
             max-height: 200px;
             overflow-y: auto;
         }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .badge {
             display: inline-block;
             padding: 2px 8px;
@@ -109,17 +227,29 @@
             font-size: 0.75em;
             margin-left: 10px;
         }
-        .badge.online { background: #2ed573; color: #000; }
-        .badge.offline { background: #ff4757; }
+
+        .badge.online {
+            background: #2ed573;
+            color: #000;
+        }
+
+        .badge.offline {
+            background: #ff4757;
+        }
+
         .modal-overlay {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background: rgba(0, 0, 0, 0.7);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
+
         .modal {
             background: #16213e;
             border-radius: 10px;
@@ -127,20 +257,45 @@
             max-width: 400px;
             width: 90%;
         }
-        .modal h3 { color: #00d4ff; margin-bottom: 15px; }
-        .modal p { color: #aaa; font-size: 0.9em; margin-bottom: 15px; }
-        .modal .form-group { margin-bottom: 15px; }
-        .modal .buttons { display: flex; gap: 10px; justify-content: flex-end; }
+
+        .modal h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+
+        .modal p {
+            color: #aaa;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .modal .form-group {
+            margin-bottom: 15px;
+        }
+
+        .modal .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
         .new-event {
             animation: highlight 2s ease-out;
             border-left: 3px solid #ff4757;
         }
+
         @keyframes highlight {
-            0% { background: rgba(255, 71, 87, 0.3); }
-            100% { background: transparent; }
+            0% {
+                background: rgba(255, 71, 87, 0.3);
+            }
+
+            100% {
+                background: transparent;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container" x-data="guardianApp()">
         <h1>Intelbras Guardian - Test UI</h1>
@@ -152,10 +307,12 @@
                 <p>Nao e possivel armar o alarme. Feche as seguintes zonas:</p>
                 <div style="max-height: 300px; overflow-y: auto; margin: 15px 0;">
                     <template x-for="zone in openZones" :key="zone.index">
-                        <div style="background: #0f3460; padding: 10px; border-radius: 5px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center;">
+                        <div
+                            style="background: #0f3460; padding: 10px; border-radius: 5px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <strong x-text="zone.friendly_name || zone.name"></strong>
-                                <span style="color: #aaa; font-size: 0.85em;" x-text="zone.friendly_name ? ' (' + zone.name + ')' : ''"></span>
+                                <span style="color: #aaa; font-size: 0.85em;"
+                                    x-text="zone.friendly_name ? ' (' + zone.name + ')' : ''"></span>
                             </div>
                             <span class="badge" style="background: #ff4757;">ABERTA</span>
                         </div>
@@ -178,15 +335,14 @@
                         <div style="background: #0f3460; padding: 10px; border-radius: 5px; margin: 5px 0;">
                             <div style="display: flex; gap: 10px; align-items: center;">
                                 <span style="min-width: 70px; color: #aaa;" x-text="zone.name"></span>
-                                <input type="text" x-model="zone.friendly_name"
-                                       :placeholder="'Nome personalizado...'"
-                                       style="flex: 1; padding: 8px;">
+                                <input type="text" x-model="zone.friendly_name" :placeholder="'Nome personalizado...'"
+                                    style="flex: 1; padding: 8px;">
                                 <!-- Wireless indicators -->
                                 <template x-if="zone.is_wireless">
                                     <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
                                         <!-- Signal strength bar -->
                                         <span :title="'Sinal: ' + (zone.signal_strength ?? '?') + '/10'"
-                                              style="display: flex; align-items: flex-end; gap: 1px; height: 14px; cursor: help;">
+                                            style="display: flex; align-items: flex-end; gap: 1px; height: 14px; cursor: help;">
                                             <template x-for="i in 5" :key="i">
                                                 <span :style="'width: 3px; border-radius: 1px; background: ' +
                                                     ((zone.signal_strength ?? 0) >= i * 2
@@ -196,20 +352,18 @@
                                             </template>
                                         </span>
                                         <span style="font-size: 0.75em; color: #aaa; min-width: 20px;"
-                                              x-text="(zone.signal_strength ?? '?') + '/10'"></span>
+                                            x-text="(zone.signal_strength ?? '?') + '/10'"></span>
                                         <!-- Battery low -->
-                                        <span x-show="zone.battery_low"
-                                              title="Bateria fraca"
-                                              style="font-size: 0.85em; color: #ff4757; cursor: help;">BAT</span>
+                                        <span x-show="zone.battery_low" title="Bateria fraca"
+                                            style="font-size: 0.85em; color: #ff4757; cursor: help;">BAT</span>
                                         <!-- Tamper -->
-                                        <span x-show="zone.tamper"
-                                              title="Tamper: sensor violado"
-                                              style="font-size: 0.85em; color: #ffa502; cursor: help;">TMP</span>
+                                        <span x-show="zone.tamper" title="Tamper: sensor violado"
+                                            style="font-size: 0.85em; color: #ffa502; cursor: help;">TMP</span>
                                     </div>
                                 </template>
                                 <span class="badge" :class="zone.is_open ? '' : 'online'"
-                                      :style="zone.is_open ? 'background: #ff4757;' : ''"
-                                      x-text="zone.is_open ? 'ABERTA' : 'OK'"></span>
+                                    :style="zone.is_open ? 'background: #ff4757;' : ''"
+                                    x-text="zone.is_open ? 'ABERTA' : 'OK'"></span>
                             </div>
                         </div>
                     </template>
@@ -229,10 +383,13 @@
             <div class="modal" style="max-width: 800px;">
                 <h3 style="color: #666;">Debug: GET_COMPLETE_STATUS (0x53)</h3>
                 <div style="max-height: 500px; overflow-y: auto; margin: 15px 0;">
-                    <pre style="background: #0a0a1a; padding: 15px; border-radius: 5px; font-size: 0.8em; white-space: pre-wrap; word-break: break-all; color: #0f0; font-family: 'Courier New', monospace;" x-text="debugOutput"></pre>
+                    <pre style="background: #0a0a1a; padding: 15px; border-radius: 5px; font-size: 0.8em; white-space: pre-wrap; word-break: break-all; color: #0f0; font-family: 'Courier New', monospace;"
+                        x-text="debugOutput"></pre>
                 </div>
                 <div class="buttons">
-                    <button @click="navigator.clipboard.writeText(debugOutput).then(() => showMessage('Copiado!', 'success'))" style="background: #666;">
+                    <button
+                        @click="navigator.clipboard.writeText(debugOutput).then(() => showMessage('Copiado!', 'success'))"
+                        style="background: #666;">
                         Copiar
                     </button>
                     <button @click="showDebugModal = false">Fechar</button>
@@ -247,8 +404,8 @@
                 <p x-text="passwordModalMessage"></p>
                 <div class="form-group">
                     <label>Senha do Painel (4-6 digitos)</label>
-                    <input type="password" x-model="alarmPassword" placeholder="******"
-                           maxlength="6" @keyup.enter="confirmPasswordModal">
+                    <input type="password" x-model="alarmPassword" placeholder="******" maxlength="6"
+                        @keyup.enter="confirmPasswordModal">
                 </div>
                 <div class="form-group" x-show="!alarmPassword || alarmPassword.length < 4">
                     <small style="color: #ff4757;">Digite a senha do painel de alarme (4-6 digitos)</small>
@@ -258,12 +415,13 @@
                         <input type="checkbox" x-model="savePasswordChecked" style="width: auto;">
                         <span>Salvar senha para sincronizacao automatica</span>
                     </label>
-                    <small style="color: #aaa;">A senha sera salva com suas credenciais e usada para atualizar o status automaticamente.</small>
+                    <small style="color: #aaa;">A senha sera salva com suas credenciais e usada para atualizar o status
+                        automaticamente.</small>
                 </div>
                 <div class="buttons">
                     <button class="danger" @click="cancelPasswordModal">Cancelar</button>
                     <button class="success" @click="confirmPasswordModal"
-                            :disabled="!alarmPassword || alarmPassword.length < 4">
+                        :disabled="!alarmPassword || alarmPassword.length < 4">
                         Confirmar
                     </button>
                 </div>
@@ -294,7 +452,8 @@
                     <div class="status info">
                         <strong>Passo 1:</strong> Abra a URL abaixo no navegador e faca login:
                     </div>
-                    <div style="background: #0f0f23; padding: 10px; border-radius: 5px; margin: 10px 0; word-break: break-all;">
+                    <div
+                        style="background: #0f0f23; padding: 10px; border-radius: 5px; margin: 10px 0; word-break: break-all;">
                         <a :href="oauthUrl" target="_blank" style="color: #00d4ff;" x-text="oauthUrl"></a>
                     </div>
                     <button @click="window.open(oauthUrl, '_blank')" class="success" style="margin-bottom: 10px;">
@@ -308,7 +467,7 @@
                     <div class="form-group" style="margin-top: 10px;">
                         <label>URL de Callback ou Codigo</label>
                         <input type="text" x-model="callbackInput"
-                               placeholder="Cole a URL completa ou apenas o codigo...">
+                            placeholder="Cole a URL completa ou apenas o codigo...">
                     </div>
 
                     <button @click="completeOAuth" :disabled="loading || !callbackInput">
@@ -343,249 +502,336 @@
                 </form>
             </div>
 
-            <div class="status error" x-show="error" x-text="error"></div>
         </div>
 
-        <!-- Logged In Section -->
-        <template x-if="sessionId">
-            <div>
-                <!-- Session Info -->
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>Sessao ativa</strong>
-                            <span class="badge online">Conectado</span>
-                        </div>
-                        <div>
-                            <button @click="loadDevices" :disabled="loading">Atualizar</button>
-                            <button class="danger" @click="logout">Sair</button>
-                        </div>
+        <!-- Local Test Connection Section -->
+        <hr style="border-color: #333; margin: 20px 0;">
+
+        <div class="local-section">
+            <h3 style="color: #00d4ff; margin-bottom: 10px;">Metodo 3: Conexao Local (IP Receiver)</h3>
+            <p style="color: #aaa; font-size: 0.9em; margin-bottom: 10px;">
+                Teste a conexao direta com a central pela rede local (sem nuvem).
+            </p>
+
+            <div class="card" style="background: #0f3460; border: 1px solid #16213e;">
+                <div class="grid">
+                    <div class="form-group">
+                        <label>IP Local da Central</label>
+                        <input type="text" x-model="localConfig.local_ip" placeholder="Ex: 192.168.1.100">
+                    </div>
+                    <div class="form-group">
+                        <label>Porta</label>
+                        <input type="number" x-model.number="localConfig.local_port" placeholder="9009">
+                    </div>
+                    <div class="form-group">
+                        <label>MAC (Conta IP Receiver) - Opcional para Local IP</label>
+                        <input type="text" x-model="localConfig.mac" placeholder="Ex: 001122334455 (Opcional)">
+                    </div>
+                    <div class="form-group">
+                        <label>Senha do Painel</label>
+                        <input type="password" x-model="localConfig.password" placeholder="******" maxlength="6">
                     </div>
                 </div>
 
-                <div class="grid">
-                    <!-- Devices Section -->
-                    <div class="card">
-                        <h2>Dispositivos</h2>
-                        <div x-show="loading" class="status info">Carregando...</div>
-                        <template x-for="device in devices" :key="device.id">
-                            <div class="device-card">
-                                <h3>
-                                    <span x-text="device.description"></span>
-                                    <span class="badge" :class="device.is_online ? 'online' : 'offline'"
-                                          x-text="device.is_online ? 'Online' : 'Offline'"></span>
-                                    <span x-show="device.has_saved_password" class="badge" style="background: #00d4ff; color: #000;">
-                                        Senha Salva
-                                    </span>
-                                </h3>
-                                <div style="font-size: 0.8em; color: #aaa; margin-bottom: 10px;">
-                                    ID: <span x-text="device.id"></span> |
-                                    MAC: <span x-text="device.mac || 'N/A'"></span> |
-                                    Modelo: <span x-text="device.model || 'N/A'"></span>
-                                    <template x-if="device.has_saved_password">
-                                        <span>
-                                            | <a href="#" @click.prevent="forgetDevicePassword(device.id)" style="color: #ff4757;">Esquecer Senha</a>
-                                        </span>
-                                    </template>
-                                </div>
+                <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button @click="testLocalStatus"
+                        :disabled="loading || !localConfig.local_ip || !localConfig.password"
+                        style="background: #00d4ff;">
+                        <span x-show="!loading">Obter Status</span>
+                        <span x-show="loading">Aguarde...</span>
+                    </button>
+                    <button @click="testLocalArm('away')"
+                        :disabled="loading || !localConfig.local_ip || !localConfig.password" class="danger">
+                        Armar Total
+                    </button>
+                    <button @click="testLocalArm('home')"
+                        :disabled="loading || !localConfig.local_ip || !localConfig.password" class="warning">
+                        Armar Parcial
+                    </button>
+                    <button @click="testLocalDisarm"
+                        :disabled="loading || !localConfig.local_ip || !localConfig.password" class="success">
+                        Desarmar
+                    </button>
+                </div>
 
-                                <!-- Eletrificador (cerca eletrica) - sem particoes -->
-                                <template x-if="isEletrificador(device)">
-                                    <div>
-                                        <div style="margin-bottom: 10px;">
-                                            <!-- Auto-sync button for devices with saved password -->
-                                            <template x-if="device.has_saved_password">
-                                                <button @click="autoSyncStatus(device.id)"
-                                                        :disabled="loading" class="success" title="Sincronizar automaticamente com senha salva">
-                                                    Sincronizar Status
-                                                </button>
+                <!-- Local Status Result -->
+                <div x-show="localStatusResult"
+                    style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #333;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>Resultado Local:</strong>
+                        <span class="badge" :class="localStatusResult?.is_armed ? 'offline' : 'online'"
+                            x-text="localStatusResult?.arm_mode"></span>
+                    </div>
+                    <div style="font-size: 0.85em; color: #aaa;">
+                        <template x-for="part in localStatusResult?.partitions || []" :key="part.index">
+                            <div>Particao <span x-text="part.index"></span>: <span x-text="part.state"
+                                    :style="part.state.includes('arm') ? 'color: #ff4757;' : 'color: #2ed573;'"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status error" x-show="error" x-text="error"></div>
+    </div>
+
+    <!-- Logged In Section -->
+    <template x-if="sessionId">
+        <div>
+            <!-- Session Info -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>Sessao ativa</strong>
+                        <span class="badge online">Conectado</span>
+                    </div>
+                    <div>
+                        <button @click="loadDevices" :disabled="loading">Atualizar</button>
+                        <button class="danger" @click="logout">Sair</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <!-- Devices Section -->
+                <div class="card">
+                    <h2>Dispositivos</h2>
+                    <div x-show="loading" class="status info">Carregando...</div>
+                    <template x-for="device in devices" :key="device.id">
+                        <div class="device-card">
+                            <h3>
+                                <span x-text="device.description"></span>
+                                <span class="badge" :class="device.is_online ? 'online' : 'offline'"
+                                    x-text="device.is_online ? 'Online' : 'Offline'"></span>
+                                <span x-show="device.has_saved_password" class="badge"
+                                    style="background: #00d4ff; color: #000;">
+                                    Senha Salva
+                                </span>
+                            </h3>
+                            <div style="font-size: 0.8em; color: #aaa; margin-bottom: 10px;">
+                                ID: <span x-text="device.id"></span> |
+                                MAC: <span x-text="device.mac || 'N/A'"></span> |
+                                Modelo: <span x-text="device.model || 'N/A'"></span>
+                                <template x-if="device.has_saved_password">
+                                    <span>
+                                        | <a href="#" @click.prevent="forgetDevicePassword(device.id)"
+                                            style="color: #ff4757;">Esquecer Senha</a>
+                                    </span>
+                                </template>
+                            </div>
+
+                            <!-- Eletrificador (cerca eletrica) - sem particoes -->
+                            <template x-if="isEletrificador(device)">
+                                <div>
+                                    <div style="margin-bottom: 10px;">
+                                        <!-- Auto-sync button for devices with saved password -->
+                                        <template x-if="device.has_saved_password">
+                                            <button @click="autoSyncStatus(device.id)" :disabled="loading"
+                                                class="success" title="Sincronizar automaticamente com senha salva">
+                                                Sincronizar Status
+                                            </button>
+                                        </template>
+                                        <!-- Manual status button (always available) -->
+                                        <button
+                                            @click="requestPassword('Obter Status do Eletrificador', 'Digite a senha para obter o status atual.', {type: 'get_status', deviceId: device.id})"
+                                            :disabled="loading" title="Obter status em tempo real">
+                                            <span
+                                                x-text="device.has_saved_password ? 'Status (Manual)' : 'Atualizar Status'"></span>
+                                        </button>
+                                    </div>
+                                    <!-- CHOQUE (Shock/Fence) -->
+                                    <div class="partition">
+                                        <div>
+                                            <strong>Choque (Cerca)</strong>
+                                            <span class="partition-status" :class="getEletrificadorShockClass(device)"
+                                                x-text="getEletrificadorShockText(device)"></span>
+                                            <template x-if="device.shock_triggered">
+                                                <span class="partition-status armed"
+                                                    style="margin-left: 5px;">DISPARADO!</span>
                                             </template>
-                                            <!-- Manual status button (always available) -->
-                                            <button @click="requestPassword('Obter Status do Eletrificador', 'Digite a senha para obter o status atual.', {type: 'get_status', deviceId: device.id})"
-                                                    :disabled="loading" title="Obter status em tempo real">
-                                                <span x-text="device.has_saved_password ? 'Status (Manual)' : 'Atualizar Status'"></span>
+                                        </div>
+                                        <div>
+                                            <button class="danger" @click="controlEletrificador(device.id, 'on')"
+                                                :disabled="loading" title="Ligar Choque">
+                                                Ligar
+                                            </button>
+                                            <button class="success" @click="controlEletrificador(device.id, 'off')"
+                                                :disabled="loading" title="Desligar Choque">
+                                                Desligar
                                             </button>
                                         </div>
-                                        <!-- CHOQUE (Shock/Fence) -->
+                                    </div>
+                                    <!-- ALARME (Alarm) -->
+                                    <div class="partition" style="margin-top: 10px;">
+                                        <div>
+                                            <strong>Alarme</strong>
+                                            <span class="partition-status" :class="getEletrificadorAlarmClass(device)"
+                                                x-text="getEletrificadorAlarmText(device)"></span>
+                                            <template x-if="device.alarm_triggered">
+                                                <span class="partition-status armed"
+                                                    style="margin-left: 5px;">DISPARADO!</span>
+                                            </template>
+                                        </div>
+                                        <div>
+                                            <button class="danger"
+                                                @click="controlEletrificadorAlarm(device.id, 'activate')"
+                                                :disabled="loading" title="Armar Alarme">
+                                                Armar
+                                            </button>
+                                            <button class="success"
+                                                @click="controlEletrificadorAlarm(device.id, 'deactivate')"
+                                                :disabled="loading" title="Desarmar Alarme">
+                                                Desarmar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Alarme com Partitions -->
+                            <template
+                                x-if="!isEletrificador(device) && device.partitions && device.partitions.length > 0">
+                                <div>
+                                    <div style="margin-bottom: 10px;">
+                                        <!-- Auto-sync button for devices with saved password -->
+                                        <template x-if="device.has_saved_password">
+                                            <button @click="autoSyncStatus(device.id)" :disabled="loading"
+                                                class="success" title="Sincronizar automaticamente com senha salva">
+                                                Sincronizar Status
+                                            </button>
+                                        </template>
+                                        <!-- Manual status button (always available) -->
+                                        <button
+                                            @click="requestPassword('Obter Status em Tempo Real', 'Digite a senha do painel para obter o status atual via ISECNet.', {type: 'get_status', deviceId: device.id})"
+                                            :disabled="loading" title="Obter status em tempo real via ISECNet">
+                                            <span
+                                                x-text="device.has_saved_password ? 'Status (Manual)' : 'Atualizar Status (ISECNet)'"></span>
+                                        </button>
+                                        <!-- Debug: Complete Status -->
+                                        <template x-if="device.has_saved_password">
+                                            <button @click="getCompleteStatusDebug(device.id)" :disabled="loading"
+                                                style="background: #666; font-size: 0.85em;"
+                                                title="Debug: GET_COMPLETE_STATUS (0x53) - raw hex bytes">
+                                                Debug: Status Completo
+                                            </button>
+                                        </template>
+                                    </div>
+                                    <template x-for="partition in device.partitions" :key="partition.id">
                                         <div class="partition">
                                             <div>
-                                                <strong>Choque (Cerca)</strong>
+                                                <strong x-text="partition.name || 'Particao ' + partition.id"></strong>
                                                 <span class="partition-status"
-                                                      :class="getEletrificadorShockClass(device)"
-                                                      x-text="getEletrificadorShockText(device)"></span>
-                                                <template x-if="device.shock_triggered">
-                                                    <span class="partition-status armed" style="margin-left: 5px;">DISPARADO!</span>
-                                                </template>
+                                                    :class="getPartitionStatusClass(partition.status)"
+                                                    x-text="getPartitionStatusText(partition.status)"></span>
                                             </div>
                                             <div>
-                                                <button class="danger" @click="controlEletrificador(device.id, 'on')"
-                                                        :disabled="loading" title="Ligar Choque">
-                                                    Ligar
+                                                <button class="danger"
+                                                    @click="armPartition(device.id, partition.id, 'away')"
+                                                    :disabled="loading" title="Armar Total - todas as zonas">
+                                                    Armar Total
                                                 </button>
-                                                <button class="success" @click="controlEletrificador(device.id, 'off')"
-                                                        :disabled="loading" title="Desligar Choque">
-                                                    Desligar
+                                                <button class="warning"
+                                                    @click="armPartition(device.id, partition.id, 'home')"
+                                                    :disabled="loading" title="Armar Parcial - só perimetro">
+                                                    Armar Parcial
                                                 </button>
-                                            </div>
-                                        </div>
-                                        <!-- ALARME (Alarm) -->
-                                        <div class="partition" style="margin-top: 10px;">
-                                            <div>
-                                                <strong>Alarme</strong>
-                                                <span class="partition-status"
-                                                      :class="getEletrificadorAlarmClass(device)"
-                                                      x-text="getEletrificadorAlarmText(device)"></span>
-                                                <template x-if="device.alarm_triggered">
-                                                    <span class="partition-status armed" style="margin-left: 5px;">DISPARADO!</span>
-                                                </template>
-                                            </div>
-                                            <div>
-                                                <button class="danger" @click="controlEletrificadorAlarm(device.id, 'activate')"
-                                                        :disabled="loading" title="Armar Alarme">
-                                                    Armar
-                                                </button>
-                                                <button class="success" @click="controlEletrificadorAlarm(device.id, 'deactivate')"
-                                                        :disabled="loading" title="Desarmar Alarme">
+                                                <button class="success"
+                                                    @click="disarmPartition(device.id, partition.id)"
+                                                    :disabled="loading" title="Desarmar">
                                                     Desarmar
                                                 </button>
                                             </div>
                                         </div>
-                                    </div>
-                                </template>
-
-                                <!-- Alarme com Partitions -->
-                                <template x-if="!isEletrificador(device) && device.partitions && device.partitions.length > 0">
-                                    <div>
-                                        <div style="margin-bottom: 10px;">
-                                            <!-- Auto-sync button for devices with saved password -->
-                                            <template x-if="device.has_saved_password">
-                                                <button @click="autoSyncStatus(device.id)"
-                                                        :disabled="loading" class="success" title="Sincronizar automaticamente com senha salva">
-                                                    Sincronizar Status
-                                                </button>
-                                            </template>
-                                            <!-- Manual status button (always available) -->
-                                            <button @click="requestPassword('Obter Status em Tempo Real', 'Digite a senha do painel para obter o status atual via ISECNet.', {type: 'get_status', deviceId: device.id})"
-                                                    :disabled="loading" title="Obter status em tempo real via ISECNet">
-                                                <span x-text="device.has_saved_password ? 'Status (Manual)' : 'Atualizar Status (ISECNet)'"></span>
-                                            </button>
-                                            <!-- Debug: Complete Status -->
-                                            <template x-if="device.has_saved_password">
-                                                <button @click="getCompleteStatusDebug(device.id)"
-                                                        :disabled="loading" style="background: #666; font-size: 0.85em;"
-                                                        title="Debug: GET_COMPLETE_STATUS (0x53) - raw hex bytes">
-                                                    Debug: Status Completo
-                                                </button>
-                                            </template>
-                                        </div>
-                                        <template x-for="partition in device.partitions" :key="partition.id">
-                                            <div class="partition">
-                                                <div>
-                                                    <strong x-text="partition.name || 'Particao ' + partition.id"></strong>
-                                                    <span class="partition-status"
-                                                          :class="getPartitionStatusClass(partition.status)"
-                                                          x-text="getPartitionStatusText(partition.status)"></span>
-                                                </div>
-                                                <div>
-                                                    <button class="danger" @click="armPartition(device.id, partition.id, 'away')"
-                                                            :disabled="loading" title="Armar Total - todas as zonas">
-                                                        Armar Total
-                                                    </button>
-                                                    <button class="warning" @click="armPartition(device.id, partition.id, 'home')"
-                                                            :disabled="loading" title="Armar Parcial - só perimetro">
-                                                        Armar Parcial
-                                                    </button>
-                                                    <button class="success" @click="disarmPartition(device.id, partition.id)"
-                                                            :disabled="loading" title="Desarmar">
-                                                        Desarmar
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </template>
-
-                                <!-- Dispositivo sem particoes e nao eh eletrificador -->
-                                <template x-if="!isEletrificador(device) && (!device.partitions || device.partitions.length === 0)">
-                                    <div class="partition">
-                                        <div style="color: #aaa;">
-                                            Este dispositivo nao possui particoes para controle.
-                                        </div>
-                                    </div>
-                                </template>
-
-                                <!-- Zones management -->
-                                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #333;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                        <span style="font-size: 0.85em; color: #aaa;">
-                                            Zonas/Setores: <span x-text="getZoneCountForModel(device.model)"></span>
-                                        </span>
-                                        <button @click="openZoneEditor(device.id)" :disabled="loading"
-                                                style="padding: 5px 10px; font-size: 0.85em;">
-                                            Gerenciar Zonas
-                                        </button>
-                                    </div>
+                                    </template>
                                 </div>
-                            </div>
-                        </template>
-                        <div x-show="devices.length === 0 && !loading" class="status info">
-                            Nenhum dispositivo encontrado. Clique em "Atualizar".
-                        </div>
-                    </div>
+                            </template>
 
-                    <!-- Events Section -->
-                    <div class="card">
-                        <h2>Eventos Recentes</h2>
-                        <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
-                            <button @click="loadEvents" :disabled="loading">
-                                Carregar Eventos
-                            </button>
-                            <button @click="toggleEventStream" :class="eventStreamConnected ? 'danger' : 'success'">
-                                <span x-text="eventStreamConnected ? 'Desconectar Stream' : 'Conectar Tempo Real'"></span>
-                            </button>
-                            <span x-show="eventStreamConnected" class="badge online" style="margin-left: 5px;">
-                                TEMPO REAL
-                            </span>
-                        </div>
-                        <div class="event-list">
-                            <template x-for="event in events" :key="event.id">
-                                <div class="event-item" :class="event.is_new ? 'new-event' : ''">
-                                    <div class="time" x-text="formatDate(event.timestamp)"></div>
-                                    <div>
-                                        <span x-show="event.is_alarm" style="color: #ff4757;">DISPARO: </span>
-                                        <span x-text="event.notification?.title || event.event_type || event.event_name || 'Evento'"></span>
-                                    </div>
-                                    <div style="color: #aaa; font-size: 0.85em;">
-                                        <span x-text="event.notification?.message || ''"></span>
-                                        <span x-show="event.zone?.name" x-text="' - Zona: ' + (event.zone?.friendly_name || event.zone?.name)"></span>
+                            <!-- Dispositivo sem particoes e nao eh eletrificador -->
+                            <template
+                                x-if="!isEletrificador(device) && (!device.partitions || device.partitions.length === 0)">
+                                <div class="partition">
+                                    <div style="color: #aaa;">
+                                        Este dispositivo nao possui particoes para controle.
                                     </div>
                                 </div>
                             </template>
-                            <div x-show="events.length === 0" class="status info">
-                                Nenhum evento carregado. Clique em "Carregar Eventos" ou "Conectar Tempo Real".
+
+                            <!-- Zones management -->
+                            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #333;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85em; color: #aaa;">
+                                        Zonas/Setores: <span x-text="getZoneCountForModel(device.model)"></span>
+                                    </span>
+                                    <button @click="openZoneEditor(device.id)" :disabled="loading"
+                                        style="padding: 5px 10px; font-size: 0.85em;">
+                                        Gerenciar Zonas
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+                    </template>
+                    <div x-show="devices.length === 0 && !loading" class="status info">
+                        Nenhum dispositivo encontrado. Clique em "Atualizar".
+                    </div>
+                </div>
+
+                <!-- Events Section -->
+                <div class="card">
+                    <h2>Eventos Recentes</h2>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center;">
+                        <button @click="loadEvents" :disabled="loading">
+                            Carregar Eventos
+                        </button>
+                        <button @click="toggleEventStream" :class="eventStreamConnected ? 'danger' : 'success'">
+                            <span x-text="eventStreamConnected ? 'Desconectar Stream' : 'Conectar Tempo Real'"></span>
+                        </button>
+                        <span x-show="eventStreamConnected" class="badge online" style="margin-left: 5px;">
+                            TEMPO REAL
+                        </span>
+                    </div>
+                    <div class="event-list">
+                        <template x-for="event in events" :key="event.id">
+                            <div class="event-item" :class="event.is_new ? 'new-event' : ''">
+                                <div class="time" x-text="formatDate(event.timestamp)"></div>
+                                <div>
+                                    <span x-show="event.is_alarm" style="color: #ff4757;">DISPARO: </span>
+                                    <span
+                                        x-text="event.notification?.title || event.event_type || event.event_name || 'Evento'"></span>
+                                </div>
+                                <div style="color: #aaa; font-size: 0.85em;">
+                                    <span x-text="event.notification?.message || ''"></span>
+                                    <span x-show="event.zone?.name"
+                                        x-text="' - Zona: ' + (event.zone?.friendly_name || event.zone?.name)"></span>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="events.length === 0" class="status info">
+                            Nenhum evento carregado. Clique em "Carregar Eventos" ou "Conectar Tempo Real".
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Status Messages -->
-                <div class="card" x-show="message">
-                    <div class="status" :class="messageType" x-text="message"></div>
-                </div>
+            <!-- Status Messages -->
+            <div class="card" x-show="message">
+                <div class="status" :class="messageType" x-text="message"></div>
+            </div>
 
-                <!-- Debug Section -->
-                <div class="card">
-                    <h2>Debug</h2>
-                    <button @click="showDebug = !showDebug">
-                        <span x-text="showDebug ? 'Ocultar' : 'Mostrar'"></span> Debug
-                    </button>
-                    <div x-show="showDebug">
-                        <h3 style="margin-top: 15px;">Ultima Resposta</h3>
-                        <pre x-text="JSON.stringify(lastResponse, null, 2)"></pre>
-                    </div>
+            <!-- Debug Section -->
+            <div class="card">
+                <h2>Debug</h2>
+                <button @click="showDebug = !showDebug">
+                    <span x-text="showDebug ? 'Ocultar' : 'Mostrar'"></span> Debug
+                </button>
+                <div x-show="showDebug">
+                    <h3 style="margin-top: 15px;">Ultima Resposta</h3>
+                    <pre x-text="JSON.stringify(lastResponse, null, 2)"></pre>
                 </div>
             </div>
-        </template>
+        </div>
+    </template>
     </div>
 
     <script>
@@ -602,6 +848,15 @@
                 messageType: 'info',
                 showDebug: false,
                 lastResponse: null,
+
+                // Local connection state
+                localConfig: {
+                    local_ip: '',
+                    local_port: 9009,
+                    mac: '',
+                    password: ''
+                },
+                localStatusResult: null,
 
                 // OAuth state
                 oauthState: null,
@@ -792,6 +1047,105 @@
                         await this.loadDevices();
                     } catch (e) {
                         this.error = e.message;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // Test Local Status
+                async testLocalStatus() {
+                    this.loading = true;
+                    this.error = null;
+                    this.localStatusResult = null;
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/v1/alarm/local/status`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.localConfig)
+                        });
+                        const data = await response.json();
+                        this.lastResponse = data;
+
+                        if (!response.ok) {
+                            const errorMsg = typeof data.detail === 'string' ? data.detail :
+                                (Array.isArray(data.detail) ? data.detail.map(e => `${e.loc?.join('.')} ${e.msg}`).join(', ') : JSON.stringify(data.detail || 'Falha ao conectar localmente'));
+                            throw new Error(errorMsg);
+                        }
+
+                        this.localStatusResult = data;
+                        this.showMessage('Status local obtido com sucesso!', 'success');
+                    } catch (e) {
+                        this.error = e.message;
+                        this.showMessage(e.message, 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // Test Local Arm
+                async testLocalArm(mode) {
+                    this.loading = true;
+                    this.error = null;
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/v1/alarm/local/arm`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ...this.localConfig,
+                                mode: mode,
+                                partition_id: null // arm all
+                            })
+                        });
+                        const data = await response.json();
+                        this.lastResponse = data;
+
+                        if (!response.ok) {
+                            const errorMsg = typeof data.detail === 'string' ? data.detail :
+                                (Array.isArray(data.detail) ? data.detail.map(e => `${e.loc?.join('.')} ${e.msg}`).join(', ') : JSON.stringify(data.detail || 'Falha ao armar localmente'));
+                            throw new Error(errorMsg);
+                        }
+
+                        this.showMessage(data.message, 'success');
+
+                        // Wait a sec and test status
+                        setTimeout(() => this.testLocalStatus(), 1500);
+                    } catch (e) {
+                        this.error = e.message;
+                        this.showMessage(e.message, 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // Test Local Disarm
+                async testLocalDisarm() {
+                    this.loading = true;
+                    this.error = null;
+                    try {
+                        const response = await fetch(`${this.apiUrl}/api/v1/alarm/local/disarm`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ...this.localConfig,
+                                partition_id: null // disarm all
+                            })
+                        });
+                        const data = await response.json();
+                        this.lastResponse = data;
+
+                        if (!response.ok) {
+                            const errorMsg = typeof data.detail === 'string' ? data.detail :
+                                (Array.isArray(data.detail) ? data.detail.map(e => `${e.loc?.join('.')} ${e.msg}`).join(', ') : JSON.stringify(data.detail || 'Falha ao desarmar localmente'));
+                            throw new Error(errorMsg);
+                        }
+
+                        this.showMessage(data.message, 'success');
+
+                        // Wait a sec and test status
+                        setTimeout(() => this.testLocalStatus(), 1500);
+                    } catch (e) {
+                        this.error = e.message;
+                        this.showMessage(e.message, 'error');
                     } finally {
                         this.loading = false;
                     }
@@ -1221,7 +1575,7 @@
                             }
                             // For other errors, extract message properly
                             const errorMsg = typeof data.detail === 'string' ? data.detail :
-                                             (data.detail?.message || 'Failed to arm');
+                                (data.detail?.message || 'Failed to arm');
                             throw new Error(errorMsg);
                         }
 
@@ -1261,7 +1615,7 @@
                             }
                             // For other errors, extract message properly
                             const errorMsg = typeof data.detail === 'string' ? data.detail :
-                                             (data.detail?.message || 'Failed to arm');
+                                (data.detail?.message || 'Failed to arm');
                             throw new Error(errorMsg);
                         }
 
@@ -1394,7 +1748,7 @@
                     if (!device) return null;
                     // Check various possible status fields (status is set by updateDeviceStatus)
                     return device.status || device.state ||
-                           (device.partitions && device.partitions[0]?.status) || 'DESCONHECIDO';
+                        (device.partitions && device.partitions[0]?.status) || 'DESCONHECIDO';
                 },
 
                 // Get CSS class for eletrificador status
@@ -2024,4 +2378,5 @@
         }
     </script>
 </body>
+
 </html>

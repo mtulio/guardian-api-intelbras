@@ -166,7 +166,8 @@ class ISECNetProtocol:
         self.is_authenticated = False
         self._lock = asyncio.Lock()
         self._password: Optional[str] = None  # Stored for ISECNet V1 commands
-        self._is_ip_receiver: bool = False  # True if using IP Receiver (ISECNet V1)
+        self._is_ip_receiver: bool = False  # True if using IP Receiver protocol
+        self._is_local_ip: bool = False  # True if using direct local IP protocol (no handshakes)
         self._is_v1: bool = False  # True if using V1 protocol (port 9015)
         self._partitions_enabled: Optional[bool] = None  # True if device has partitions enabled (from status)
         self._model_code: Optional[int] = None  # Cached model code from status response
@@ -194,6 +195,82 @@ class ISECNetProtocol:
         for byte in data:
             result += byte
         return result & 0xFF
+
+    @staticmethod
+    def _crc16(data: List[int]) -> int:
+        """Calculate ISECProgram CRC16.
+
+        Uses a 24-bit register with XOR constant 0x00800500.
+        Validated against PCAP known-good packets from AMT Remoto app.
+        """
+        crc_register = 0
+        crc_byte_count = 0
+
+        all_data = list(data) + [0, 0]
+
+        for byte_val in all_data:
+            if crc_byte_count == 0:
+                crc_register = (crc_register & ~0x00FF0000) | ((byte_val & 0xFF) << 16)
+            elif crc_byte_count == 1:
+                crc_register = (crc_register & ~0x0000FF00) | ((byte_val & 0xFF) << 8)
+            elif crc_byte_count == 2:
+                crc_register = (crc_register & ~0x000000FF) | (byte_val & 0xFF)
+
+            if crc_byte_count < 2:
+                crc_byte_count += 1
+            else:
+                for _ in range(8):
+                    crc_register <<= 1
+                    if crc_register & 0x1000000:
+                        crc_register ^= 0x00800500
+
+        final_crc = (((crc_register >> 16) & 0xFF) << 8) | ((crc_register >> 8) & 0xFF)
+        return final_crc & 0xFFFF
+
+    @staticmethod
+    def _password_to_bcd(password_str: str) -> List[int]:
+        """Convert password string to BCD bytes.
+
+        '123456' → [0x12, 0x34, 0x56]
+        '1234'   → [0x12, 0x34]
+        """
+        if len(password_str) % 2:
+            password_str = '0' + password_str
+        result = []
+        for i in range(0, len(password_str), 2):
+            hi = int(password_str[i])
+            lo = int(password_str[i + 1])
+            result.append((hi << 4) | lo)
+        return result
+
+    def _build_isecprogram_packet(self, cmd: int, data: Optional[List[int]] = None) -> bytes:
+        """Build ISECProgram-over-IsecNet packet for local direct connection.
+
+        Format: [outer_size][0xe7][isecprog_size][cmd][data...][CRC16_hi][CRC16_lo][outer_XOR_checksum]
+
+        This format is used for direct local IP connections (port 9009),
+        validated against PCAP captures from the official AMT Remoto app.
+        """
+        if data is None:
+            data = []
+
+        # ISECProgram inner: [size][cmd][data...]
+        isecprog_size = 1 + len(data)  # cmd + data bytes
+        isecprog = [isecprog_size, cmd] + list(data)
+
+        # CRC16 over the ISECProgram content
+        crc = self._crc16(isecprog)
+        crc_hi = (crc >> 8) & 0xFF
+        crc_lo = crc & 0xFF
+
+        # Outer: [outer_size][0xe7][isecprog...][crc_hi][crc_lo]
+        outer_content = [0xe7] + isecprog + [crc_hi, crc_lo]
+        outer_size = len(outer_content)
+
+        packet = [outer_size] + outer_content
+        packet.append(self._checksum(packet))  # XOR ^ 0xFF
+
+        return bytes(packet)
 
     @staticmethod
     def _to_two_bytes(value: int) -> List[int]:
@@ -1530,78 +1607,138 @@ class ISECNetProtocol:
                 if not connected:
                     return False, "Failed to connect to all ports"
 
-                # Step 1: Server connection
-                logger.info(f"Sending server connection command (V1={use_v1})")
-                cmd = self._build_server_connection_cmd(is_ip_receiver, use_v1)
-                response = await self._send_and_receive(cmd)
+                self._is_local_ip = is_ip_receiver and (not mac or mac.strip() == "")
+                
+                if self._is_local_ip:
+                    # Direct Local IP connection using ISECProgram protocol
+                    # Validated against PCAP from AMT Remoto app
+                    logger.info("Direct Local IP: Using ISECProgram protocol")
 
-                if not response:
-                    return False, "No response to server connection"
-
-                byte_value = self._parse_byte_response(response, is_ip_receiver, use_v1)
-                if byte_value is None:
-                    return False, "Failed to parse server connection response"
-
-                logger.info(f"Server connection successful, byte={byte_value}")
-
-                # Step 2: App connection
-                logger.info(f"Sending app connection command (V1={use_v1})")
-
-                if use_v1:
-                    # V1 protocol: uses client_id + MAC in hex format
-                    # Client ID identifies this API instance (like Android device ID in the app)
-                    # We generate a consistent ID - must be valid hex characters (0-9, A-F)
-                    # Using a fixed hex string for API client identification
-                    client_id = "A1B2C3D4E5F60001"  # 16 hex chars = 8 bytes (API client identifier)
-
-                    cmd = self._build_v1_connection_cmd(client_id, mac, byte_value, ConnectionType.ETHERNET)
-                    response = await self._send_and_receive(cmd)
+                    # Step 1: INITIATE (0x10)
+                    logger.info("ISECProgram: Sending INITIATE (0x10)")
+                    cmd = self._build_isecprogram_packet(0x10)
+                    response = await self._send_and_receive(cmd, timeout=5.0)
 
                     if not response:
-                        return False, "No response to V1 app connection"
+                        return False, "Local IP: No response to INITIATE (panel unreachable?)"
 
-                    app_response = self._parse_v1_connection_response(response)
+                    # Check for 0x90 (Ready) in response
+                    if 0x90 not in response:
+                        logger.warning(f"Local IP: Expected 0x90 (Ready), got: {response.hex()}")
+                        return False, f"Local IP: Panel not ready (response: {response.hex()})"
 
-                    # V1 fallback: try SIM01 if ETHERNET fails with NOT_CONNECTED
-                    if app_response == AppConnectionResponse.NOT_CONNECTED:
-                        logger.info("V1 ETHERNET failed, trying SIM01...")
-                        cmd = self._build_v1_connection_cmd(client_id, mac, byte_value, ConnectionType.SIM01)
-                        response = await self._send_and_receive(cmd)
-                        if response:
-                            app_response = self._parse_v1_connection_response(response)
+                    logger.info("ISECProgram: Panel ready (0x90)")
+
+                    # Step 2: AUTH (0x11) with BCD password + 0x99 suffix
+                    bcd_pwd = self._password_to_bcd(password)
+                    auth_data = bcd_pwd + [0x99]
+                    logger.info(f"ISECProgram: Sending AUTH (0x11) with {len(password)}-digit password (BCD)")
+                    cmd = self._build_isecprogram_packet(0x11, auth_data)
+                    response = await self._send_and_receive(cmd, timeout=5.0)
+
+                    if not response:
+                        return False, "Local IP: No response to AUTH (wrong password format?)"
+
+                    # Check for 0x53 ('S' = Success) or 0xe1 (Invalid password)
+                    if 0x53 in response:
+                        logger.info("ISECProgram: AUTH successful (0x53)")
+                    elif 0xe1 in response or 225 in response:
+                        logger.warning("ISECProgram: Invalid password (0xe1)")
+                        return False, "Invalid password"
+                    else:
+                        logger.warning(f"ISECProgram: Unknown AUTH response: {response.hex()}")
+                        return False, f"Local IP: AUTH failed (response: {response.hex()})"
+
+                    # Step 3: CONFIRM (0x19) - optional, may NACK but session still works
+                    logger.info("ISECProgram: Sending CONFIRM (0x19)")
+                    cmd = self._build_isecprogram_packet(0x19, [0x11])
+                    response = await self._send_and_receive(cmd, timeout=3.0)
+                    if response:
+                        logger.debug(f"ISECProgram: CONFIRM response: {response.hex()}")
+                    else:
+                        logger.debug("ISECProgram: CONFIRM no response (non-critical)")
+
+                    self.is_connected = True
+                    self.is_authenticated = True
+                    self._is_ip_receiver = False
+                    self._is_v1 = False
+                    self._password = password
+                    logger.info("ISECProgram: Local IP connection and authentication successful")
+                    return True, "Connected via Local IP (ISECProgram)"
                 else:
-                    # V2 protocol: uses alarm name format
-                    cmd = self._build_app_connection_cmd(mac, device_id, byte_value, is_ip_receiver)
+                    # Normal cloud or formal IP Receiver Handshake flows
+                    # Step 1: Server connection
+                    logger.info(f"Sending server connection command (V1={use_v1})")
+                    cmd = self._build_server_connection_cmd(is_ip_receiver, use_v1)
                     response = await self._send_and_receive(cmd)
 
                     if not response:
-                        return False, "No response to app connection"
+                        return False, "No response to server connection"
 
-                    app_response = self._parse_app_connection_response(response, is_ip_receiver)
+                    byte_value = self._parse_byte_response(response, is_ip_receiver, use_v1)
+                    if byte_value is None:
+                        return False, "Failed to parse server connection response"
 
-                if app_response != AppConnectionResponse.SUCCESS:
-                    error_messages = {
-                        AppConnectionResponse.NOT_CONNECTED: "Not connected",
-                        AppConnectionResponse.CENTRAL_NOT_FOUND: "Central not found",
-                        AppConnectionResponse.CENTRAL_BUSY: "Central is busy",
-                        AppConnectionResponse.CENTRAL_OFFLINE: "Central is offline"
-                    }
-                    return False, error_messages.get(app_response, f"App connection failed: {app_response}")
+                    logger.info(f"Server connection successful, byte={byte_value}")
 
-                # Extract source ID (V2 only, V1 doesn't use source_id)
-                if not use_v1:
-                    self.source_id = self._parse_source_id(response)
-                logger.info(f"App connection successful, sourceID={self.source_id}, V1={use_v1}")
+                    # Step 2: App connection
+                    logger.info(f"Sending app connection command (V1={use_v1})")
 
-                self.is_connected = True
-                self._is_ip_receiver = is_ip_receiver
-                self._is_v1 = use_v1
-                self._password = password  # Store for V1 commands
+                    if use_v1:
+                        # V1 protocol: uses client_id + MAC in hex format
+                        # Client ID identifies this API instance (like Android device ID in the app)
+                        # We generate a consistent ID - must be valid hex characters (0-9, A-F)
+                        # Using a fixed hex string for API client identification
+                        client_id = "A1B2C3D4E5F60001"  # 16 hex chars = 8 bytes (API client identifier)
 
-                if use_v1 or is_ip_receiver:
-                    # V1 mode: No separate AUTH command, password is embedded in each command
+                        cmd = self._build_v1_connection_cmd(client_id, mac, byte_value, ConnectionType.ETHERNET)
+                        response = await self._send_and_receive(cmd)
+
+                        if not response:
+                            return False, "No response to V1 app connection"
+
+                        app_response = self._parse_v1_connection_response(response)
+
+                        # V1 fallback: try SIM01 if ETHERNET fails with NOT_CONNECTED
+                        if app_response == AppConnectionResponse.NOT_CONNECTED:
+                            logger.info("V1 ETHERNET failed, trying SIM01...")
+                            cmd = self._build_v1_connection_cmd(client_id, mac, byte_value, ConnectionType.SIM01)
+                            response = await self._send_and_receive(cmd)
+                            if response:
+                                app_response = self._parse_v1_connection_response(response)
+                    else:
+                        # V2 protocol: uses alarm name format
+                        cmd = self._build_app_connection_cmd(mac, device_id, byte_value, is_ip_receiver)
+                        response = await self._send_and_receive(cmd)
+
+                        if not response:
+                            return False, "No response to app connection"
+
+                        app_response = self._parse_app_connection_response(response, is_ip_receiver)
+
+                    if app_response != AppConnectionResponse.SUCCESS:
+                        error_messages = {
+                            AppConnectionResponse.NOT_CONNECTED: "Not connected",
+                            AppConnectionResponse.CENTRAL_NOT_FOUND: "Central not found",
+                            AppConnectionResponse.CENTRAL_BUSY: "Central is busy",
+                            AppConnectionResponse.CENTRAL_OFFLINE: "Central is offline"
+                        }
+                        return False, error_messages.get(app_response, f"App connection failed: {app_response}")
+
+                    # Extract source ID (V2 only, V1 doesn't use source_id)
+                    if not use_v1 and not self._is_local_ip:
+                        self.source_id = self._parse_source_id(response)
+                    logger.info(f"App connection successful, sourceID={self.source_id}, V1={use_v1}")
+
+                    self.is_connected = True
+                    self._is_ip_receiver = is_ip_receiver
+                    self._is_v1 = use_v1
+                    self._password = password  # Store for V1 commands
+
+                if use_v1 or is_ip_receiver or self._is_local_ip:
+                    # V1/Local mode: No separate AUTH command, password is embedded in each command
                     # Validate password by sending a status command
-                    mode = "V1 Cloud" if use_v1 else "IP Receiver"
+                    mode = "Local IP" if self._is_local_ip else ("V1 Cloud" if use_v1 else "IP Receiver")
                     logger.info(f"{mode}: Validating password with status command")
 
                     cmd = self._build_isecv1_status_cmd(password)
@@ -1754,7 +1891,48 @@ class ISECNetProtocol:
                 return False, AlarmStatus()
 
             try:
-                if self._is_ip_receiver or self._is_v1:
+                if self._is_local_ip:
+                    # ISECProgram local IP mode
+                    logger.debug("Getting status using ISECProgram (Local IP)")
+                    cmd = self._build_isecprogram_packet(0x15)
+                    response = await self._send_and_receive(cmd, timeout=5.0)
+
+                    if not response:
+                        return False, AlarmStatus()
+
+                    logger.debug(f"ISECProgram status response ({len(response)} bytes): {response.hex()}")
+
+                    # Parse ISECProgram response
+                    # Format: [size][0xe7][isecprog_size][response_cmd][data...][crc_hi][crc_lo][checksum]
+                    # Response cmd should be 0x95 (0x15 + 0x80)
+                    status = AlarmStatus()
+                    if len(response) >= 5:
+                        # Find the status data byte(s) after the response command
+                        # response[3] = response command (e.g. 0x95)
+                        # response[4] = status data byte
+                        if len(response) > 4:
+                            status_byte = response[4]
+                            # Bit interpretation from AMT 2018 E Smart:
+                            # Bit 0: Armed away
+                            # Bit 1: Armed stay
+                            # Bit 3: Triggered/alarm
+                            # Bit 6: Partition A armed
+                            is_armed = bool(status_byte & 0x01) or bool(status_byte & 0x02)
+                            is_triggered = bool(status_byte & 0x08)
+                            if status_byte & 0x02:
+                                arm_mode = "armed_stay"
+                            elif status_byte & 0x01:
+                                arm_mode = "armed_away"
+                            else:
+                                arm_mode = "disarmed"
+                            status.is_armed = is_armed
+                            status.arm_mode = arm_mode
+                            status.is_triggered = is_triggered
+                            logger.info(f"ISECProgram status: armed={is_armed}, mode={arm_mode}, triggered={is_triggered}, raw=0x{status_byte:02x}")
+
+                    return True, status
+
+                elif self._is_ip_receiver or self._is_v1:
                     # ISECNet V1 mode - command includes password
                     # Used for both IP Receiver and V1 Cloud connections
                     mode = "IP Receiver" if self._is_ip_receiver else "V1 Cloud"
