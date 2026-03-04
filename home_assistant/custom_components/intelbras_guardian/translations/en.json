@@ -2,11 +2,29 @@
   "config": {
     "step": {
       "user": {
+        "title": "Intelbras Guardian - Modo de Conexão",
+        "description": "Escolha como conectar ao painel de alarme.",
+        "data": {
+          "connection_mode": "Modo de Conexão"
+        }
+      },
+      "cloud": {
         "title": "Intelbras Guardian - API Connection",
         "description": "Enter the FastAPI middleware address to connect.",
         "data": {
           "fastapi_host": "FastAPI Host (IP or hostname)",
           "fastapi_port": "FastAPI Port"
+        }
+      },
+      "local": {
+        "title": "Intelbras Guardian - Conexão Local",
+        "description": "Configure a conexão local direta com o painel de alarme.\n\n**Middleware**: Endereço do servidor FastAPI Guardian.\n**Painel**: IP e porta da central Intelbras na rede local (porta padrão: 9009).\n**Senha**: Senha de acesso remoto de 6 dígitos (não é a senha master).",
+        "data": {
+          "fastapi_host": "Middleware Host (IP or hostname)",
+          "fastapi_port": "Middleware Port",
+          "alarm_ip": "IP do Painel de Alarme",
+          "alarm_port": "Porta do Painel (9009)",
+          "alarm_password": "Senha de Acesso Remoto (6 dígitos)"
         }
       },
       "oauth": {
@@ -18,11 +36,12 @@
       }
     },
     "error": {
-      "cannot_connect": "Could not connect to FastAPI middleware. Check host and port.",
-      "oauth_start_failed": "Failed to start OAuth flow. Check FastAPI logs.",
-      "oauth_callback_failed": "Authentication failed. Make sure to copy the complete callback URL.",
+      "cannot_connect": "Cannot connect to FastAPI middleware. Check the host and port.",
+      "oauth_start_failed": "Failed to start OAuth flow. Check the FastAPI logs.",
+      "oauth_callback_failed": "Authentication failed. Make sure you copied the complete callback URL.",
       "callback_url_required": "Please paste the callback URL.",
-      "unknown": "An unexpected error occurred."
+      "local_connection_failed": "Falha na conexão local. Verifique o IP, porta e senha do painel.",
+      "unknown": "Unexpected error occurred."
     },
     "abort": {
       "already_configured": "This API instance is already configured."
@@ -41,19 +60,23 @@
         }
       },
       "configure_unified_alarm": {
-        "title": "Configure Unified Alarm",
-        "description": "Select a device with multiple partitions to configure the unified alarm.\n\nThe unified alarm allows you to control multiple partitions with 'Home' and 'Away' modes.",
+        "title": "Select Device for Unified Alarm",
+        "description": "Select a device with multiple partitions to configure the unified alarm.\n\nThe unified alarm allows controlling multiple partitions as a single entity with Home/Away modes.",
         "data": {
           "device": "Device"
         }
       },
       "select_partitions": {
-        "title": "Configure Partitions",
-        "description": "Configure which partitions will be armed in each mode.\n\n**Home**: Arms only selected partitions (e.g., perimeter sensors)\n**Away**: Arms all selected partitions (e.g., leaving home)",
+        "title": "Configure Unified Alarm",
+        "description": "Configure which partitions to arm for each mode:\n\n**Home Mode (Em Casa):** Arms only selected partitions (e.g., perimeter only)\n**Away Mode (Ausente):** Arms all selected partitions\n\n**Arm Mode per Partition:** Choose how each partition should arm (Total or Parcial)",
         "data": {
-          "enable_unified": "Enable unified alarm",
-          "home_partitions": "Partitions for 'Home' mode",
-          "away_partitions": "Partitions for 'Away' mode"
+          "enable_unified": "Enable Unified Alarm",
+          "home_partitions": "Partitions for Home Mode",
+          "away_partitions": "Partitions for Away Mode",
+          "arm_mode_0": "Partition 1 Arm Mode",
+          "arm_mode_1": "Partition 2 Arm Mode",
+          "arm_mode_2": "Partition 3 Arm Mode",
+          "arm_mode_3": "Partition 4 Arm Mode"
         }
       },
       "reauth": {
@@ -65,7 +88,7 @@
       },
       "configure_device_password": {
         "title": "Select Device",
-        "description": "Select a device to configure the ISECNet protocol communication password.",
+        "description": "Select a device to configure the password for ISECNet protocol communication.",
         "data": {
           "device": "Device"
         }
@@ -80,19 +103,19 @@
       },
       "manage_zones": {
         "title": "Manage Zone Names",
-        "description": "Zone friendly names can be configured via the FastAPI Web UI.\n\nAccess: {webui_url}\n\nLogin with your Intelbras credentials, select the device and click 'Zones' to manage names."
+        "description": "Zone friendly names can be configured via the FastAPI Web UI.\n\nAccess: {webui_url}\n\nLogin with your Intelbras credentials, select the device, and click on 'Zonas' to manage zone names."
       }
     },
     "error": {
-      "save_failed": "Failed to save password. Check FastAPI logs.",
-      "delete_failed": "Failed to remove password.",
+      "save_failed": "Failed to save password. Check the FastAPI logs.",
+      "delete_failed": "Failed to delete password.",
       "password_required": "Password is required.",
-      "oauth_callback_failed": "Authentication failed. Make sure to copy the complete callback URL.",
+      "oauth_callback_failed": "Authentication failed. Make sure you copied the complete callback URL.",
       "callback_url_required": "Please paste the callback URL.",
-      "select_at_least_one": "Select at least one partition."
+      "select_at_least_one": "Please select at least one partition."
     },
     "abort": {
-      "not_loaded": "Integration not loaded. Try again.",
+      "not_loaded": "Integration not loaded. Please try again.",
       "no_devices": "No devices found.",
       "no_multi_partition_devices": "No devices with multiple partitions found."
     }

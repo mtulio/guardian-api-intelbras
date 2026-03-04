@@ -13,7 +13,16 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .api_client import GuardianApiClient
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, EVENT_ALARM
+from .const import (
+    CONF_ALARM_IP,
+    CONF_ALARM_PASSWORD,
+    CONF_ALARM_PORT,
+    CONF_CONNECTION_MODE,
+    CONNECTION_MODE_LOCAL,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
+    EVENT_ALARM,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +46,12 @@ class GuardianCoordinator(DataUpdateCoordinator):
         self.client = client
         self.entry = entry
         self._last_event_id: Optional[int] = None
+
+        # Connection mode
+        self._is_local = entry.data.get(CONF_CONNECTION_MODE) == CONNECTION_MODE_LOCAL
+        self._alarm_ip = entry.data.get(CONF_ALARM_IP)
+        self._alarm_port = entry.data.get(CONF_ALARM_PORT, 9009)
+        self._alarm_password = entry.data.get(CONF_ALARM_PASSWORD)
 
         # Stale triggered state timeout (10 minutes)
         self._triggered_timestamps: Dict[int, float] = {}
@@ -128,6 +143,104 @@ class GuardianCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> Dict[str, Any]:
         """Fetch data from API."""
+        if self._is_local:
+            return await self._async_update_data_local()
+        return await self._async_update_data_cloud()
+
+    async def _async_update_data_local(self) -> Dict[str, Any]:
+        """Fetch data via local ISECProgram connection."""
+        try:
+            status = await self.client.get_local_status(
+                self._alarm_ip, self._alarm_port, self._alarm_password
+            )
+
+            if not status:
+                _LOGGER.warning("Failed to get local status from %s", self._alarm_ip)
+                raise UpdateFailed(f"Cannot reach alarm at {self._alarm_ip}:{self._alarm_port}")
+
+            device_id = 0
+            arm_mode = status.get("arm_mode", "disarmed")
+            is_armed = status.get("is_armed", False)
+            is_triggered = status.get("is_triggered", False)
+
+            device = {
+                "id": device_id,
+                "description": f"Alarme Local ({self._alarm_ip})",
+                "model": status.get("model", "AMT 2018 E Smart"),
+                "mac": status.get("mac") or "",
+                "arm_mode": arm_mode,
+                "is_armed": is_armed,
+                "is_triggered": is_triggered,
+                "has_saved_password": True,
+                "partitions_enabled": status.get("partitions_enabled", False),
+                "is_eletrificador": status.get("is_eletrificador", False),
+                "connection_unavailable": status.get("connection_unavailable", False),
+                "real_time_status": status,
+            }
+
+            # Build partitions
+            all_partitions = []
+            raw_partitions = status.get("partitions", [])
+            if raw_partitions:
+                for p in raw_partitions:
+                    all_partitions.append({
+                        "id": p.get("index", 0),
+                        "device_id": device_id,
+                        "device_mac": "",
+                        "device_model": device.get("model", ""),
+                        "name": f"Partição {p.get('index', 0) + 1}",
+                        "status": p.get("state", arm_mode),
+                    })
+            else:
+                # Single virtual partition
+                all_partitions.append({
+                    "id": 0,
+                    "device_id": device_id,
+                    "device_mac": "",
+                    "device_model": device.get("model", ""),
+                    "name": device["description"],
+                    "status": arm_mode,
+                })
+
+            # Build zones
+            all_zones = []
+            for z in status.get("zones", []):
+                all_zones.append({
+                    "device_id": device_id,
+                    "device_mac": "",
+                    "index": z.get("index", 0),
+                    "name": z.get("name", f"Zona {z.get('index', 0) + 1:02d}"),
+                    "is_open": z.get("is_open", False),
+                    "is_bypassed": z.get("is_bypassed", False),
+                    "is_wireless": z.get("is_wireless", False),
+                    "battery_low": z.get("battery_low", False),
+                    "signal_strength": z.get("signal_strength"),
+                    "tamper": z.get("tamper", False),
+                })
+
+            # Build indexes
+            zone_index = {(z["device_id"], z["index"]): z for z in all_zones}
+            partition_index = {(p["device_id"], p["id"]): p for p in all_partitions}
+
+            return {
+                "devices": {device_id: device},
+                "partitions": all_partitions,
+                "zones": all_zones,
+                "events": [],
+                "new_events": [],
+                "last_event": None,
+                "_zone_index": zone_index,
+                "_partition_index": partition_index,
+            }
+
+        except UpdateFailed:
+            raise
+        except Exception as err:
+            _LOGGER.error(f"Error fetching local data: {err}")
+            raise UpdateFailed(f"Error communicating with alarm: {err}") from err
+
+    async def _async_update_data_cloud(self) -> Dict[str, Any]:
+        """Fetch data from cloud API."""
         try:
             # Check if we have a valid session
             if not self.client.session_id:
@@ -464,3 +577,40 @@ class GuardianCoordinator(DataUpdateCoordinator):
                     zone.get("id") == zone_id):
                     return zone
         return None
+
+    # --- Local-aware command helpers ---
+
+    async def arm_partition(
+        self,
+        device_id: int,
+        partition_id: int,
+        mode: str = "away"
+    ) -> Dict[str, Any]:
+        """Arm a partition, routing to local or cloud API."""
+        if self._is_local:
+            return await self.client.arm_local(
+                self._alarm_ip, self._alarm_port, self._alarm_password,
+                partition_id=partition_id, mode=mode
+            )
+        return await self.client.arm_partition(device_id, partition_id, mode)
+
+    async def disarm_partition(
+        self,
+        device_id: int,
+        partition_id: int
+    ) -> Dict[str, Any]:
+        """Disarm a partition, routing to local or cloud API."""
+        if self._is_local:
+            return await self.client.disarm_local(
+                self._alarm_ip, self._alarm_port, self._alarm_password,
+                partition_id=partition_id
+            )
+        return await self.client.disarm_partition(device_id, partition_id)
+
+    async def turn_off_siren(self, device_id: int) -> Dict[str, Any]:
+        """Turn off siren, routing to local or cloud API."""
+        if self._is_local:
+            # Local mode: siren off not yet implemented via ISECProgram
+            return {"success": False, "error": "Siren off not supported in local mode"}
+        return await self.client.turn_off_siren(device_id)
+

@@ -9,7 +9,18 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.exceptions import ConfigEntryAuthFailed
 
 from .api_client import GuardianApiClient
-from .const import CONF_FASTAPI_HOST, CONF_FASTAPI_PORT, CONF_SESSION_ID, DOMAIN, PLATFORMS
+from .const import (
+    CONF_ALARM_IP,
+    CONF_ALARM_PASSWORD,
+    CONF_ALARM_PORT,
+    CONF_CONNECTION_MODE,
+    CONF_FASTAPI_HOST,
+    CONF_FASTAPI_PORT,
+    CONF_SESSION_ID,
+    CONNECTION_MODE_LOCAL,
+    DOMAIN,
+    PLATFORMS,
+)
 from .coordinator import GuardianCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -198,6 +209,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Intelbras Guardian from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
+    connection_mode = entry.data.get(CONF_CONNECTION_MODE, "cloud")
+    is_local = connection_mode == CONNECTION_MODE_LOCAL
+
     # Create API client
     session = async_get_clientsession(hass)
     client = GuardianApiClient(
@@ -206,26 +220,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         session=session,
     )
 
-    # Try to restore session
-    stored_session_id = entry.data.get(CONF_SESSION_ID)
-    if stored_session_id:
-        client.set_session_id(stored_session_id)
-        if await client.check_session():
-            _LOGGER.info("Restored existing session")
-        else:
-            _LOGGER.warning("Stored session expired or invalid")
-            # Session is invalid - user needs to re-authenticate via OAuth
-            # The integration will still load but with limited functionality
-            # User can re-authenticate via Options -> Re-authenticate
-            client.set_session_id(None)
+    if is_local:
+        # Local mode: no session/OAuth needed
+        _LOGGER.info("Setting up in LOCAL mode (IP: %s)", entry.data.get(CONF_ALARM_IP))
+    else:
+        # Cloud mode: try to restore session
+        stored_session_id = entry.data.get(CONF_SESSION_ID)
+        if stored_session_id:
+            client.set_session_id(stored_session_id)
+            if await client.check_session():
+                _LOGGER.info("Restored existing session")
+            else:
+                _LOGGER.warning("Stored session expired or invalid")
+                client.set_session_id(None)
 
-    if not client.session_id:
-        _LOGGER.warning(
-            "No valid session. Please re-authenticate via integration options "
-            "(Settings -> Devices & Services -> Intelbras Guardian -> Configure -> Re-authenticate)"
-        )
-        # We still set up the integration so user can re-authenticate
-        # The coordinator will handle the missing session gracefully
+        if not client.session_id:
+            _LOGGER.warning(
+                "No valid session. Please re-authenticate via integration options "
+                "(Settings -> Devices & Services -> Intelbras Guardian -> Configure -> Re-authenticate)"
+            )
 
     # Create coordinator
     coordinator = GuardianCoordinator(hass, client, entry)

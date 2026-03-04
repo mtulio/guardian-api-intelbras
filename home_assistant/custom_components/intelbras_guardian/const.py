@@ -7,9 +7,18 @@ CONF_FASTAPI_HOST = "fastapi_host"
 CONF_FASTAPI_PORT = "fastapi_port"
 CONF_SESSION_ID = "session_id"
 CONF_DEVICE_PASSWORD = "device_password"
+CONF_CONNECTION_MODE = "connection_mode"
+CONF_ALARM_IP = "alarm_ip"
+CONF_ALARM_PORT = "alarm_port"
+CONF_ALARM_PASSWORD = "alarm_password"
+
+# Connection modes
+CONNECTION_MODE_CLOUD = "cloud"
+CONNECTION_MODE_LOCAL = "local"
 
 # Default values
 DEFAULT_FASTAPI_PORT = 8000
+DEFAULT_ALARM_PORT = 9009
 DEFAULT_SCAN_INTERVAL = 1
 
 # Eletrificador models

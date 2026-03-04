@@ -368,7 +368,7 @@ class GuardianAlarmControlPanel(CoordinatorEntity, AlarmControlPanelEntity):
             device_lock = _get_device_command_lock(self._device_id)
             async with device_lock:
                 try:
-                    result = await self.coordinator.client.disarm_partition(
+                    result = await self.coordinator.disarm_partition(
                         self._device_id,
                         self._partition_id
                     )
@@ -429,7 +429,7 @@ class GuardianAlarmControlPanel(CoordinatorEntity, AlarmControlPanelEntity):
             device_lock = _get_device_command_lock(self._device_id)
             async with device_lock:
                 try:
-                    result = await self.coordinator.client.arm_partition(
+                    result = await self.coordinator.arm_partition(
                         self._device_id,
                         self._partition_id,
                         mode="home"
@@ -500,7 +500,7 @@ class GuardianAlarmControlPanel(CoordinatorEntity, AlarmControlPanelEntity):
             device_lock = _get_device_command_lock(self._device_id)
             async with device_lock:
                 try:
-                    result = await self.coordinator.client.arm_partition(
+                    result = await self.coordinator.arm_partition(
                         self._device_id,
                         self._partition_id,
                         mode="away"
@@ -915,7 +915,7 @@ class GuardianUnifiedAlarmControlPanel(CoordinatorEntity, AlarmControlPanelEntit
                     if idx < len(self._partitions):
                         partition_id = self._partitions[idx].get("id")
                         try:
-                            result = await self.coordinator.client.disarm_partition(
+                            result = await self.coordinator.disarm_partition(
                                 self._device_id,
                                 partition_id
                             )
@@ -972,7 +972,7 @@ class GuardianUnifiedAlarmControlPanel(CoordinatorEntity, AlarmControlPanelEntit
                             partition_id = self._partitions[idx].get("id")
                             _LOGGER.info(f"Disarming partition {idx} (not in home mode, status={status})")
                             try:
-                                await self.coordinator.client.disarm_partition(
+                                await self.coordinator.disarm_partition(
                                     self._device_id, partition_id
                                 )
                             except Exception as e:
@@ -986,7 +986,7 @@ class GuardianUnifiedAlarmControlPanel(CoordinatorEntity, AlarmControlPanelEntit
                         arm_mode = self._partition_arm_modes.get(str(idx), "away")
                         _LOGGER.debug(f"Arming partition {idx} with mode={arm_mode}")
                         try:
-                            result = await self.coordinator.client.arm_partition(
+                            result = await self.coordinator.arm_partition(
                                 self._device_id,
                                 partition_id,
                                 mode=arm_mode
@@ -1062,7 +1062,7 @@ class GuardianUnifiedAlarmControlPanel(CoordinatorEntity, AlarmControlPanelEntit
                         arm_mode = self._partition_arm_modes.get(str(idx), "away")
                         _LOGGER.debug(f"Arming partition {idx} with mode={arm_mode}")
                         try:
-                            result = await self.coordinator.client.arm_partition(
+                            result = await self.coordinator.arm_partition(
                                 self._device_id,
                                 partition_id,
                                 mode=arm_mode

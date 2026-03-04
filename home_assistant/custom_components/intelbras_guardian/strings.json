@@ -2,11 +2,29 @@
   "config": {
     "step": {
       "user": {
+        "title": "Intelbras Guardian - Modo de Conexão",
+        "description": "Escolha como conectar ao painel de alarme.",
+        "data": {
+          "connection_mode": "Modo de Conexão"
+        }
+      },
+      "cloud": {
         "title": "Intelbras Guardian - API Connection",
         "description": "Enter the FastAPI middleware address to connect.",
         "data": {
           "fastapi_host": "FastAPI Host (IP or hostname)",
           "fastapi_port": "FastAPI Port"
+        }
+      },
+      "local": {
+        "title": "Intelbras Guardian - Conexão Local",
+        "description": "Configure a conexão local direta com o painel de alarme.\n\n**Middleware**: Endereço do servidor FastAPI Guardian.\n**Painel**: IP e porta da central Intelbras na rede local (porta padrão: 9009).\n**Senha**: Senha de acesso remoto de 6 dígitos (não é a senha master).",
+        "data": {
+          "fastapi_host": "Middleware Host (IP or hostname)",
+          "fastapi_port": "Middleware Port",
+          "alarm_ip": "IP do Painel de Alarme",
+          "alarm_port": "Porta do Painel (9009)",
+          "alarm_password": "Senha de Acesso Remoto (6 dígitos)"
         }
       },
       "oauth": {
@@ -22,6 +40,7 @@
       "oauth_start_failed": "Failed to start OAuth flow. Check the FastAPI logs.",
       "oauth_callback_failed": "Authentication failed. Make sure you copied the complete callback URL.",
       "callback_url_required": "Please paste the callback URL.",
+      "local_connection_failed": "Falha na conexão local. Verifique o IP, porta e senha do painel.",
       "unknown": "Unexpected error occurred."
     },
     "abort": {

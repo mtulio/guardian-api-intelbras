@@ -421,6 +421,122 @@ class GuardianApiClient:
         except Exception:
             return False
 
+    # --- Local connection methods (no session/OAuth needed) ---
+
+    async def _request_local(
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Make a local API request (no session_id required)."""
+        try:
+            async with async_timeout.timeout(self._timeout):
+                if method == "POST":
+                    response = await self._session.post(
+                        f"{self._base_url}{endpoint}",
+                        json=data or {}
+                    )
+                elif method == "GET":
+                    response = await self._session.get(
+                        f"{self._base_url}{endpoint}"
+                    )
+                else:
+                    return None
+
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    error = await response.text()
+                    _LOGGER.error(f"Local API error {response.status}: {error}")
+                    return None
+
+        except aiohttp.ClientError as e:
+            _LOGGER.error(f"Local connection error: {e}")
+            return None
+        except Exception as e:
+            _LOGGER.error(f"Local request error: {e}")
+            return None
+
+    async def test_local_connection(
+        self,
+        alarm_ip: str,
+        alarm_port: int,
+        password: str
+    ) -> bool:
+        """Test local connection to alarm panel via middleware."""
+        result = await self._request_local(
+            "POST",
+            "/api/v1/alarm/local/status",
+            {
+                "local_ip": alarm_ip,
+                "local_port": alarm_port,
+                "password": password,
+            }
+        )
+        return result is not None and result.get("message") == "OK"
+
+    async def get_local_status(
+        self,
+        alarm_ip: str,
+        alarm_port: int,
+        password: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get alarm status via local connection."""
+        return await self._request_local(
+            "POST",
+            "/api/v1/alarm/local/status",
+            {
+                "local_ip": alarm_ip,
+                "local_port": alarm_port,
+                "password": password,
+            }
+        )
+
+    async def arm_local(
+        self,
+        alarm_ip: str,
+        alarm_port: int,
+        password: str,
+        partition_id: Optional[int] = None,
+        mode: str = "away"
+    ) -> Dict[str, Any]:
+        """Arm via local connection."""
+        data = {
+            "local_ip": alarm_ip,
+            "local_port": alarm_port,
+            "password": password,
+            "mode": mode,
+        }
+        if partition_id is not None:
+            data["partition_id"] = partition_id
+
+        result = await self._request_local("POST", "/api/v1/alarm/local/arm", data)
+        if result:
+            return result
+        return {"success": False, "error": "Local arm failed"}
+
+    async def disarm_local(
+        self,
+        alarm_ip: str,
+        alarm_port: int,
+        password: str,
+        partition_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Disarm via local connection."""
+        data = {
+            "local_ip": alarm_ip,
+            "local_port": alarm_port,
+            "password": password,
+        }
+        if partition_id is not None:
+            data["partition_id"] = partition_id
+
+        result = await self._request_local("POST", "/api/v1/alarm/local/disarm", data)
+        if result:
+            return result
+        return {"success": False, "error": "Local disarm failed"}
+
     async def check_session(self) -> bool:
         """Check if current session is still valid."""
         if not self._session_id:

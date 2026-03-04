@@ -2,30 +2,49 @@
   "config": {
     "step": {
       "user": {
-        "title": "Intelbras Guardian - Conexao API",
-        "description": "Informe o endereco do middleware FastAPI para conectar.",
+        "title": "Intelbras Guardian - Modo de Conexão",
+        "description": "Escolha como conectar ao painel de alarme.",
+        "data": {
+          "connection_mode": "Modo de Conexão"
+        }
+      },
+      "cloud": {
+        "title": "Intelbras Guardian - Conexão API",
+        "description": "Informe o endereço do middleware FastAPI para conectar.",
         "data": {
           "fastapi_host": "Host do FastAPI (IP ou hostname)",
           "fastapi_port": "Porta do FastAPI"
         }
       },
+      "local": {
+        "title": "Intelbras Guardian - Conexão Local",
+        "description": "Configure a conexão local direta com o painel de alarme.\n\n**Middleware**: Endereço do servidor FastAPI Guardian.\n**Painel**: IP e porta da central Intelbras na rede local (porta padrão: 9009).\n**Senha**: Senha de acesso remoto de 6 dígitos (não é a senha master).",
+        "data": {
+          "fastapi_host": "Host do Middleware (IP ou hostname)",
+          "fastapi_port": "Porta do Middleware",
+          "alarm_ip": "IP do Painel de Alarme",
+          "alarm_port": "Porta do Painel (9009)",
+          "alarm_password": "Senha de Acesso Remoto (6 dígitos)"
+        }
+      },
       "oauth": {
         "title": "Intelbras Guardian - Login",
-        "description": "Para completar a autenticacao:\n\n1. Abra o link abaixo no seu navegador:\n\n**{auth_url}**\n\n2. Faca login com sua conta Intelbras\n\n3. Apos o login, voce sera redirecionado para uma pagina com uma URL contendo `code=` e `state=`\n\n4. Copie a **URL completa** da barra de endereco do navegador e cole abaixo\n\nAPI: {api_url}",
+        "description": "Para completar a autenticação:\n\n1. Abra o link abaixo no seu navegador:\n\n**{auth_url}**\n\n2. Faça login com sua conta Intelbras\n\n3. Após o login, você será redirecionado para uma página com uma URL contendo `code=` e `state=`\n\n4. Copie a **URL completa** da barra de endereço do navegador e cole abaixo\n\nAPI: {api_url}",
         "data": {
-          "callback_url": "URL de Callback (cole a URL completa apos o login)"
+          "callback_url": "URL de Callback (cole a URL completa após o login)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Nao foi possivel conectar ao middleware FastAPI. Verifique o host e a porta.",
+      "cannot_connect": "Não foi possível conectar ao middleware FastAPI. Verifique o host e a porta.",
       "oauth_start_failed": "Falha ao iniciar fluxo OAuth. Verifique os logs do FastAPI.",
-      "oauth_callback_failed": "Autenticacao falhou. Certifique-se de copiar a URL completa de callback.",
+      "oauth_callback_failed": "Autenticação falhou. Certifique-se de copiar a URL completa de callback.",
       "callback_url_required": "Por favor, cole a URL de callback.",
+      "local_connection_failed": "Falha na conexão local. Verifique o IP, porta e senha do painel.",
       "unknown": "Ocorreu um erro inesperado."
     },
     "abort": {
-      "already_configured": "Esta instancia da API ja esta configurada."
+      "already_configured": "Esta instância da API já está configurada."
     }
   },
   "options": {

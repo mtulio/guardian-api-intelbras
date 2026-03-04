@@ -13,20 +13,36 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api_client import GuardianApiClient
 from .const import (
+    CONF_ALARM_IP,
+    CONF_ALARM_PASSWORD,
+    CONF_ALARM_PORT,
     CONF_AWAY_PARTITIONS,
+    CONF_CONNECTION_MODE,
     CONF_FASTAPI_HOST,
     CONF_FASTAPI_PORT,
     CONF_HOME_PARTITIONS,
     CONF_PARTITION_ARM_MODES,
     CONF_SESSION_ID,
     CONF_UNIFIED_ALARM,
+    CONNECTION_MODE_CLOUD,
+    CONNECTION_MODE_LOCAL,
+    DEFAULT_ALARM_PORT,
     DEFAULT_FASTAPI_PORT,
     DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
-# Step 1: API connection
+# Step 1: Connection mode
+STEP_MODE_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_CONNECTION_MODE, default=CONNECTION_MODE_LOCAL): vol.In(
+            {CONNECTION_MODE_LOCAL: "Local (LAN direto)", CONNECTION_MODE_CLOUD: "Cloud (Intelbras Guardian)"}
+        ),
+    }
+)
+
+# Step 2a: API connection (cloud mode)
 STEP_API_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_FASTAPI_HOST): str,
@@ -34,7 +50,18 @@ STEP_API_SCHEMA = vol.Schema(
     }
 )
 
-# Step 2: OAuth callback URL
+# Step 2b: Local connection
+STEP_LOCAL_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_FASTAPI_HOST): str,
+        vol.Required(CONF_FASTAPI_PORT, default=DEFAULT_FASTAPI_PORT): int,
+        vol.Required(CONF_ALARM_IP): str,
+        vol.Required(CONF_ALARM_PORT, default=DEFAULT_ALARM_PORT): int,
+        vol.Required(CONF_ALARM_PASSWORD): str,
+    }
+)
+
+# Step 3: OAuth callback URL (cloud only)
 STEP_OAUTH_SCHEMA = vol.Schema(
     {
         vol.Required("callback_url"): str,
@@ -53,6 +80,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._port: Optional[int] = None
         self._auth_url: Optional[str] = None
         self._client: Optional[GuardianApiClient] = None
+        self._connection_mode: str = CONNECTION_MODE_LOCAL
 
     @staticmethod
     @callback
@@ -66,7 +94,27 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self,
         user_input: Optional[Dict[str, Any]] = None
     ) -> FlowResult:
-        """Handle the initial step - API connection."""
+        """Handle the initial step - choose connection mode."""
+        errors: Dict[str, str] = {}
+
+        if user_input is not None:
+            self._connection_mode = user_input[CONF_CONNECTION_MODE]
+            if self._connection_mode == CONNECTION_MODE_LOCAL:
+                return await self.async_step_local()
+            else:
+                return await self.async_step_cloud()
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=STEP_MODE_SCHEMA,
+            errors=errors,
+        )
+
+    async def async_step_cloud(
+        self,
+        user_input: Optional[Dict[str, Any]] = None
+    ) -> FlowResult:
+        """Handle cloud connection setup - API host + OAuth."""
         errors: Dict[str, str] = {}
 
         if user_input is not None:
@@ -93,8 +141,59 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors["base"] = "oauth_start_failed"
 
         return self.async_show_form(
-            step_id="user",
+            step_id="cloud",
             data_schema=STEP_API_SCHEMA,
+            errors=errors,
+        )
+
+    async def async_step_local(
+        self,
+        user_input: Optional[Dict[str, Any]] = None
+    ) -> FlowResult:
+        """Handle local connection setup - middleware + alarm panel details."""
+        errors: Dict[str, str] = {}
+
+        if user_input is not None:
+            self._host = user_input[CONF_FASTAPI_HOST]
+            self._port = user_input[CONF_FASTAPI_PORT]
+            alarm_ip = user_input[CONF_ALARM_IP]
+            alarm_port = user_input[CONF_ALARM_PORT]
+            alarm_password = user_input[CONF_ALARM_PASSWORD]
+
+            session = async_get_clientsession(self.hass)
+            self._client = GuardianApiClient(
+                host=self._host,
+                port=self._port,
+                session=session,
+            )
+
+            # Check if middleware is reachable
+            if not await self._client.check_connection():
+                errors["base"] = "cannot_connect"
+            else:
+                # Test local connection to alarm panel
+                if await self._client.test_local_connection(alarm_ip, alarm_port, alarm_password):
+                    # Success! Create entry
+                    await self.async_set_unique_id(f"guardian_local_{alarm_ip}")
+                    self._abort_if_unique_id_configured()
+
+                    return self.async_create_entry(
+                        title=f"Intelbras Local ({alarm_ip})",
+                        data={
+                            CONF_CONNECTION_MODE: CONNECTION_MODE_LOCAL,
+                            CONF_FASTAPI_HOST: self._host,
+                            CONF_FASTAPI_PORT: self._port,
+                            CONF_ALARM_IP: alarm_ip,
+                            CONF_ALARM_PORT: alarm_port,
+                            CONF_ALARM_PASSWORD: alarm_password,
+                        },
+                    )
+                else:
+                    errors["base"] = "local_connection_failed"
+
+        return self.async_show_form(
+            step_id="local",
+            data_schema=STEP_LOCAL_SCHEMA,
             errors=errors,
         )
 
@@ -125,6 +224,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     return self.async_create_entry(
                         title=f"Intelbras Guardian ({self._host})",
                         data={
+                            CONF_CONNECTION_MODE: CONNECTION_MODE_CLOUD,
                             CONF_FASTAPI_HOST: self._host,
                             CONF_FASTAPI_PORT: self._port,
                             CONF_SESSION_ID: self._client.session_id,
