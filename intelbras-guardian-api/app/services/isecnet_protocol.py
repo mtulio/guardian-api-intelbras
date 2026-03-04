@@ -1915,10 +1915,12 @@ class ISECNetProtocol:
                             # Bit interpretation from AMT 2018 E Smart:
                             # Bit 0: Armed away
                             # Bit 1: Armed stay
-                            # Bit 3: Triggered/alarm
+                            # Bit 3: Alarm/siren event (only meaningful when armed)
                             # Bit 6: Partition A armed
                             is_armed = bool(status_byte & 0x01) or bool(status_byte & 0x02)
-                            is_triggered = bool(status_byte & 0x08)
+                            # Bit 3 indicates alarm event, but when disarmed it may
+                            # represent alarm memory/history, not an active triggered state
+                            is_triggered = bool(status_byte & 0x08) and is_armed
                             if status_byte & 0x02:
                                 arm_mode = "armed_stay"
                             elif status_byte & 0x01:
@@ -1928,7 +1930,14 @@ class ISECNetProtocol:
                             status.is_armed = is_armed
                             status.arm_mode = arm_mode
                             status.is_triggered = is_triggered
-                            logger.info(f"ISECProgram status: armed={is_armed}, mode={arm_mode}, triggered={is_triggered}, raw=0x{status_byte:02x}")
+                            logger.info(
+                                f"ISECProgram status: armed={is_armed}, mode={arm_mode}, "
+                                f"triggered={is_triggered}, raw=0x{status_byte:02x}, "
+                                f"bits=[b0_away={bool(status_byte & 0x01)}, "
+                                f"b1_stay={bool(status_byte & 0x02)}, "
+                                f"b3_alarm={bool(status_byte & 0x08)}, "
+                                f"b6_partA={bool(status_byte & 0x40)}]"
+                            )
 
                     return True, status
 
