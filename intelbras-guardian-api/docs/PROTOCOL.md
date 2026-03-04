@@ -57,6 +57,13 @@ O ISECNet é um protocolo binário proprietário da Intelbras usado para comunic
 - **Porta**: Configurável (normalmente 9009)
 - **Fluxo**: GET_BYTE → APP_CONNECT → Comandos V1 (senha embutida)
 
+### 4. Local IP (ISECProgram)
+- **Servidor**: IP direto da central na rede local
+- **Porta**: 9009
+- **Modelos**: AMT_2018_E_SMART, AMT_1000_SMART (testado)
+- **Fluxo**: INITIATE (0x10) → AUTH (0x11, BCD + 0x99) → CONFIRM (0x19) → Comandos
+- **Sem necessidade de nuvem, MAC, ou conta de IP Receiver**
+
 ---
 
 ## Servidores e Portas
@@ -66,6 +73,7 @@ O ISECNet é um protocolo binário proprietário da Intelbras usado para comunic
 | Cloud V2 | amt8000.intelbras.com.br | 9009, 80 | ISECNet V2 |
 | Cloud V1 | amt.intelbras.com.br | 9015 | ISECNet V1 |
 | IP Receiver | Configurável | 9009 | ISECNet V1 |
+| Local IP | IP da central | 9009 | ISECProgram (0xe7) |
 
 ---
 
@@ -425,6 +433,120 @@ Se modelo in [AMT_8000, AMT_8000_LITE, AMT_8000_PRO, AMT_9000, ELC_6012_NET]:
     usar V2 (amt8000.intelbras.com.br:9009)
 Senão:
     usar V1 (amt.intelbras.com.br:9015)
+```
+
+---
+
+## Protocolo ISECProgram (Local IP — 0xe7)
+
+Protocolo para conexão local direta com a central pela rede (porta 9009), sem necessidade de nuvem ou IP Receiver. Validado contra capturas PCAP do aplicativo oficial AMT Remoto.
+
+### Estrutura de Pacote ISECProgram
+
+O ISECProgram é encapsulado no wrapper IsecNet `0xe7`:
+
+```
+[outer_size:1][0xe7:1][isecprog_size:1][cmd:1][data:N][CRC16_hi:1][CRC16_lo:1][XOR_checksum:1]
+```
+
+| Campo | Tamanho | Descrição |
+|-------|---------|-----------|
+| outer_size | 1 byte | Número de bytes após este (exceto XOR_checksum) |
+| 0xe7 | 1 byte | Marcador do protocolo IsecNet |
+| isecprog_size | 1 byte | Tamanho de cmd + data |
+| cmd | 1 byte | Código do comando ISECProgram |
+| data | N bytes | Dados do comando (opcional) |
+| CRC16_hi | 1 byte | Byte alto do CRC16 |
+| CRC16_lo | 1 byte | Byte baixo do CRC16 |
+| XOR_checksum | 1 byte | XOR de todos os bytes anteriores ^ 0xFF |
+
+> **Nota**: O CRC16 é calculado sobre `[isecprog_size, cmd, data...]`. O XOR_checksum é calculado sobre todos os bytes do pacote (exceto ele próprio).
+
+### CRC16 ISECProgram
+
+Algoritmo customizado da Intelbras:
+- Registrador de 24 bits inicializado em 0
+- Constante XOR: `0x00800500`
+- Dados de entrada seguidos de 2 bytes zero (trailing)
+- Resultado: 16 bits extraídos do registrador
+
+```python
+def crc16(data: List[int]) -> int:
+    crc_register = 0
+    crc_byte_count = 0
+    all_data = list(data) + [0, 0]
+
+    for byte_val in all_data:
+        if crc_byte_count == 0:
+            crc_register = (crc_register & ~0x00FF0000) | ((byte_val & 0xFF) << 16)
+        elif crc_byte_count == 1:
+            crc_register = (crc_register & ~0x0000FF00) | ((byte_val & 0xFF) << 8)
+        elif crc_byte_count == 2:
+            crc_register = (crc_register & ~0x000000FF) | (byte_val & 0xFF)
+
+        if crc_byte_count < 2:
+            crc_byte_count += 1
+        else:
+            for _ in range(8):
+                crc_register <<= 1
+                if crc_register & 0x1000000:
+                    crc_register ^= 0x00800500
+
+    return (((crc_register >> 16) & 0xFF) << 8) | ((crc_register >> 8) & 0xFF) & 0xFFFF
+```
+
+### Codificação da Senha (BCD)
+
+A senha é codificada em formato **BCD (Binary Coded Decimal)**, seguida do sufixo `0x99`:
+
+| Senha | BCD | + Sufixo |
+|-------|-----|----------|
+| 123456 | `12 34 56` | `12 34 56 99` |
+| 001234 | `00 12 34` | `00 12 34 99` |
+
+> **Importante**: A senha de acesso remoto (6 dígitos) é diferente da senha master do painel.
+
+### Comandos ISECProgram
+
+| Comando | Código | Resposta | Descrição |
+|---------|--------|----------|-----------|
+| INITIATE | 0x10 | 0x90 (Ready) | Inicia sessão |
+| AUTH | 0x11 | 0x53 (Success) | Autenticação (BCD pwd + 0x99) |
+| STATUS | 0x15 | 0x95 + data | Status parcial |
+| CONFIRM | 0x19 | 0x99 ou NACK | Confirma operação anterior |
+| ??? | 0x17 | ??? | Comando observado no PCAP (a investigar) |
+
+> **Nota**: A resposta de CONFIRM frequentemente retorna NACK (`00 00`), mas a sessão continua funcional. Este é um comportamento conhecido.
+
+### Fluxo de Conexão ISECProgram
+
+```
+1. Cliente → Central (192.168.x.x:9009)
+   Pacote: [05][E7][01][10][CRC_hi][CRC_lo][checksum]
+   Resposta: [05][E7][01][90][CRC_hi][CRC_lo][checksum]
+   0x90 = Ready
+
+2. Cliente → Central: AUTH com senha BCD
+   Pacote: [09][E7][05][11][BCD_pw0][BCD_pw1][BCD_pw2][99][CRC_hi][CRC_lo][checksum]
+   Resposta: [05][E7][01][53][CRC_hi][CRC_lo][checksum]
+   0x53 = 'S' = Success
+
+3. Cliente → Central: CONFIRM (opcional)
+   Pacote: [06][E7][02][19][11][CRC_hi][CRC_lo][checksum]
+   Resposta: NACK ou 0x99 (não afeta a sessão)
+
+4. Cliente → Central: STATUS
+   Pacote: [05][E7][01][15][CRC_hi][CRC_lo][checksum]
+   Resposta: [06][E7][02][95][status_byte][CRC_hi][CRC_lo][checksum]
+```
+
+### Exemplos de Pacotes ISECProgram (do PCAP)
+
+```
+INITIATE:  05 e7 01 10 06 60 6a
+AUTH:      09 e7 05 11 90 29 58 99 8e a3 50  (senha "123456" em BCD)
+CONFIRM:   06 e7 02 19 11 56 4e 0c
+STATUS:    05 e7 01 15 06 7e 71
 ```
 
 ---
